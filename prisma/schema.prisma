@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+model account {
+  id            String         @id(map: "account_pk") @db.VarChar
+  user_id       String?        @db.VarChar
+  account_type  String?        @db.VarChar
+  account_no    String?        @db.VarChar
+  option_values option_values? @relation(fields: [account_type], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "account_option_values_fk")
+  users         users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "account_user_fk")
+}
+
+model balance {
+  id           String    @id(map: "balance_pk") @db.VarChar
+  user         String?   @db.VarChar
+  balance      BigInt?
+  account_no   String?   @db.VarChar
+  account_type String?   @db.VarChar
+  created_at   DateTime? @db.Date
+}
+
+model option_values {
+  id          String    @id(map: "option_values_pk") @db.VarChar
+  option_id   BigInt?   @default(0)
+  name        String?   @db.VarChar
+  parent      String?   @default("") @db.VarChar
+  order       Int?      @default(1)
+  label       String?   @db.VarChar
+  status      String?   @default("active") @db.VarChar
+  description String?
+  image       String?
+  account     account[]
+  options     options?  @relation(fields: [option_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "option_values_options_fk")
+}
+
+model options {
+  id            BigInt          @id(map: "options_pk") @default(autoincrement())
+  parent        BigInt?
+  name          String?         @db.VarChar
+  description   String?         @db.VarChar
+  status        String?         @default("active") @db.VarChar
+  option_values option_values[]
+}
+
+model roles {
+  id          String       @id(map: "roles_pk") @default(dbgenerated("md5((random())::text)")) @db.VarChar
+  name        String?      @db.VarChar
+  description String?      @db.VarChar
+  user_roles  user_roles[]
+}
+
+model transaction {
+  id               String    @id(map: "transaction_pk") @db.VarChar
+  reference_no     String?   @db.VarChar
+  user_id          String?   @db.VarChar
+  transaction_type String?   @db.VarChar
+  amount           BigInt?
+  balance_before   BigInt?
+  balance_after    BigInt?
+  created_date     DateTime? @db.Timestamp(6)
+}
+
+model user_roles {
+  id      BigInt  @id(map: "user_roles_pk") @default(autoincrement())
+  role_id String? @db.VarChar
+  user_id String? @db.VarChar
+  roles   roles?  @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_roles_roles_fk")
+  users   users?  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_roles_user_fk")
+}
+
+model users {
+  id           String       @id(map: "user_pk") @default(dbgenerated("md5((random())::text)")) @db.VarChar
+  full_name    String?      @db.VarChar
+  username     String?      @unique(map: "users_unique") @db.VarChar
+  password     String?      @db.VarChar
+  created_date DateTime?    @default(now()) @db.Date
+  update_date  DateTime?    @db.Date
+  balance      BigInt?      @default(0)
+  account      account[]
+  user_roles   user_roles[]
+}
