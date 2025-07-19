@@ -1,22 +1,3 @@
-
-<p align="center">
-  <a href="https://github.com/RizkyZaidan/cash-ease-be" target="_blank">
-    <img src="https://raw.githubusercontent.com/RizkyZaidan/cash-ease-be/main/logo.png" alt="Cash Ease Logo" width="120" />
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/RizkyZaidan/cash-ease-be/releases" target="_blank">
-    <img src="https://img.shields.io/github/v/release/RizkyZaidan/cash-ease-be" alt="Latest Release" />
-  </a>
-  <a href="https://github.com/RizkyZaidan/cash-ease-be/actions" target="_blank">
-    <img src="https://img.shields.io/github/actions/workflow/status/RizkyZaidan/cash-ease-be/ci.yml?branch=main" alt="CI Status" />
-  </a>
-  <a href="https://github.com/RizkyZaidan/cash-ease-be/blob/main/LICENSE" target="_blank">
-    <img src="https://img.shields.io/github/license/RizkyZaidan/cash-ease-be" alt="License" />
-  </a>
-</p>
-
 ---
 
 # Cash Ease Backend
