@@ -1,18 +1,20 @@
-// src/users/dto/create-user.dto.ts
 import { Decimal } from '@prisma/client/runtime/library';
-import { IsString, IsOptional, MinLength } from 'class-validator';
+import { IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
-    @IsString()
-    full_name: string;
+  @IsString()
+  username: string;
 
-    @IsString()
-    username: string;
+  @IsString()
+  full_name: string;
 
-    @IsString()
-    @MinLength(8)
-    password: string;
+  @IsString()
+  @MinLength(8)
+  password: string;
 
-    @IsOptional()
-    balance?: Decimal;
+  @IsString()
+  account_no: string;
+
+  @IsString()
+  account_type: string;
 }

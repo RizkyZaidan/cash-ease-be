@@ -4,22 +4,51 @@ import { CreateUserDto } from './dto/create-users.dto';
 import { UpdateUserDto } from './dto/update-users.dto';
 import * as bcrypt from 'bcrypt';
 import { Decimal } from '@prisma/client/runtime/library';
+import { users } from '@prisma/client';
 
 @Injectable()
 export class CifService {
     constructor(private prisma: PrismaService) { }
 
-    async create(createUserDto: CreateUserDto) {
-        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-        return this.prisma.users.create({
-            data: {
-                full_name: createUserDto.full_name,
-                username: createUserDto.username,
-                password: hashedPassword,
-                balance: createUserDto.balance ?? Decimal(0),
-            },
-        });
+    async create(createUserDto: CreateUserDto): Promise<users | null> {
+        try {
+            const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+            const tx = this.prisma.$transaction(async (prisma) => {
+                const user = await prisma.users.create({
+                    data: {
+                        full_name: createUserDto.full_name,
+                        username: createUserDto.username,
+                        password: hashedPassword,
+                        balance: new Decimal(0),
+                    },
+                });
+
+                await prisma.user_roles.create({
+                    data: {
+                        user_id: user.id,
+                        role_id: "ad62e29981b140f139acbe970654aa14",
+                    },
+                });
+
+                await prisma.account.create({
+                    data: {
+                        user_id: user.id,
+                        account_type: createUserDto.account_type,
+                        account_no: createUserDto.account_no, 
+                    },
+                });
+
+                return user;
+            });
+
+            return tx;
+        } catch (error) {
+            console.error('Error creating user:', error);
+            throw error;
+        }
     }
+
 
     async findAll(search?: string, page = 1, limit = 10) {
         const where = search
@@ -46,7 +75,7 @@ export class CifService {
                             account_no: true,
                             account_type: true,
                         },
-                        take: 1, 
+                        take: 1,
                     },
                 },
             }),
@@ -58,11 +87,12 @@ export class CifService {
             return {
                 id: user.id,
                 full_name: user.full_name,
-                balance: user.balance,
+                balance: user.balance ? user.balance.toString() : null,
                 account_no: account?.account_no ?? null,
                 account_type: account?.account_type ?? null,
             };
         });
+
 
         return {
             data: mappedData,

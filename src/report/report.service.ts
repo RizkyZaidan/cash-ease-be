@@ -264,6 +264,7 @@ export class ReportService {
         };
     }
 
+
     async getTransfer(
         search?: string,
         page = 1,
@@ -285,78 +286,106 @@ export class ReportService {
 
         // Prepare date filter if provided
         let dateCondition = '';
-        const params: (number | string | Date)[] = [searchParam, searchParam, limit, offset];
+        const params: (string | Date | number)[] = [searchParam, searchParam]; // $1 and $2 for search params
+
         if (filterDate) {
             try {
                 const parsedDate = parse(filterDate, 'dd-MM-yyyy', new Date());
 
-                const startStr = formatInTimeZone(startOfDay(parsedDate), timeZone, "yyyy-MM-dd'T'HH:mm:ssXXX");
-                const endStr = formatInTimeZone(endOfDay(parsedDate), timeZone, "yyyy-MM-dd'T'HH:mm:ssXXX");
+                const startStr = formatInTimeZone(
+                    startOfDay(parsedDate),
+                    timeZone,
+                    "yyyy-MM-dd'T'HH:mm:ssXXX",
+                );
+                const endStr = formatInTimeZone(
+                    endOfDay(parsedDate),
+                    timeZone,
+                    "yyyy-MM-dd'T'HH:mm:ssXXX",
+                );
 
                 const start = new Date(startStr);
                 const end = new Date(endStr);
 
-                dateCondition = `AND t_sender.created_date BETWEEN $5 AND $6`;
-                params.push(start, end);
+                dateCondition = `AND t_sender.created_date BETWEEN $3::timestamp AND $4::timestamp`;
+                params.push(start, end); // $3 and $4 for date range
             } catch {
-                throw new BadRequestException({ message: 'filterDate must be in dd-MM-yyyy format' });
+                throw new BadRequestException({
+                    message: 'filterDate must be in dd-MM-yyyy format',
+                });
             }
         }
 
-        // Query transfers with sender and receiver joined on same reference_no
-        // sender: balance_before > balance_after
-        // receiver: balance_before < balance_after
-        // filter by search on sender or receiver full name
-        // distinct by reference_no to avoid duplicates
+        params.push(limit, offset); 
+
+        const limitParamIndex = filterDate ? 5 : 3;
+        const offsetParamIndex = filterDate ? 6 : 4;
+
         const query = `
-      WITH transfers AS (
-        SELECT
-          t_sender.reference_no,
-          u_sender.full_name AS nama_pengirim,
-          u_receiver.full_name AS nama_penerima,
-          t_sender.created_date
-        FROM transaction t_sender
-        JOIN transaction t_receiver ON t_sender.reference_no = t_receiver.reference_no
-        JOIN users u_sender ON u_sender.id = t_sender.user_id
-        JOIN users u_receiver ON u_receiver.id = t_receiver.user_id
-        WHERE t_sender.transaction_type = 'transfer'
-          AND t_receiver.transaction_type = 'transfer'
-          AND t_sender.balance_before > t_sender.balance_after
-          AND t_receiver.balance_before < t_receiver.balance_after
-          AND (u_sender.full_name ILIKE $1 OR u_receiver.full_name ILIKE $2)
-          ${dateCondition}
-        GROUP BY t_sender.reference_no, u_sender.full_name, u_receiver.full_name, t_sender.created_date
-        ORDER BY t_sender.created_date DESC
-        LIMIT $3 OFFSET $4
-      )
+            WITH transfers AS (
+            SELECT
+                t_sender.reference_no,
+                u_sender.full_name AS nama_pengirim,
+                u_receiver.full_name AS nama_penerima,
+                t_sender.created_date
+            FROM transaction t_sender
+            JOIN transaction t_receiver ON t_sender.reference_no = t_receiver.reference_no
+            JOIN users u_sender ON u_sender.id = t_sender.user_id
+            JOIN users u_receiver ON u_receiver.id = t_receiver.user_id
+            WHERE t_sender.transaction_type = 'transfer'
+                AND t_receiver.transaction_type = 'transfer'
+                AND t_sender.balance_before > t_sender.balance_after
+                AND t_receiver.balance_before < t_receiver.balance_after
+                AND (u_sender.full_name ILIKE $1 OR u_receiver.full_name ILIKE $2)
+                ${dateCondition}
+            GROUP BY t_sender.reference_no, u_sender.full_name, u_receiver.full_name, t_sender.created_date
+            ORDER BY t_sender.created_date DESC
+            LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
+            )
+            SELECT * FROM transfers;
+        `;
 
-      SELECT * FROM transfers;
-    `;
-
-        const transfersResult = await this.prisma.$queryRawUnsafe(query, searchParam, searchParam, limit, offset, ...params);
+        // Execute the query with all params
+        const transfersResult = await this.prisma.$queryRawUnsafe(query, ...params);
         const transfers = transfersResult as TransferResult[];
 
         // Total count query
-        const totalCountQuery = `
-      SELECT COUNT(DISTINCT t_sender.reference_no) AS total
-      FROM transaction t_sender
-      JOIN transaction t_receiver ON t_sender.reference_no = t_receiver.reference_no
-      JOIN users u_sender ON u_sender.id = t_sender.user_id
-      JOIN users u_receiver ON u_receiver.id = t_receiver.user_id
-      WHERE t_sender.transaction_type = 'transfer'
-        AND t_receiver.transaction_type = 'transfer'
-        AND t_sender.balance_before > t_sender.balance_after
-        AND t_receiver.balance_before < t_receiver.balance_after
-        AND (u_sender.full_name ILIKE $1 OR u_receiver.full_name ILIKE $2)
-        ${filterDate ? 'AND t_sender.created_date BETWEEN $3 AND $4' : ''}
-    `;
+        let totalCountQuery = `
+            SELECT COUNT(DISTINCT t_sender.reference_no) AS total
+            FROM transaction t_sender
+            JOIN transaction t_receiver ON t_sender.reference_no = t_receiver.reference_no
+            JOIN users u_sender ON u_sender.id = t_sender.user_id
+            JOIN users u_receiver ON u_receiver.id = t_receiver.user_id
+            WHERE t_sender.transaction_type = 'transfer'
+            AND t_receiver.transaction_type = 'transfer'
+            AND t_sender.balance_before > t_sender.balance_after
+            AND t_receiver.balance_before < t_receiver.balance_after
+            AND (u_sender.full_name ILIKE $1 OR u_receiver.full_name ILIKE $2)
+        `;
 
         const totalParams: (string | Date)[] = [searchParam, searchParam];
+
         if (filterDate) {
-            const parsedDate = parse(filterDate, 'dd-MM-yyyy', new Date());
-            const startStr = formatInTimeZone(startOfDay(parsedDate), timeZone, "yyyy-MM-dd'T'HH:mm:ssXXX");
-            const endStr = formatInTimeZone(endOfDay(parsedDate), timeZone, "yyyy-MM-dd'T'HH:mm:ssXXX");
-            totalParams.push(new Date(startStr), new Date(endStr));
+            totalCountQuery += ` AND t_sender.created_date BETWEEN $3::timestamp AND $4::timestamp`;
+            try {
+                const parsedDate = parse(filterDate, 'dd-MM-yyyy', new Date());
+
+                const startStr = formatInTimeZone(
+                    startOfDay(parsedDate),
+                    timeZone,
+                    "yyyy-MM-dd'T'HH:mm:ssXXX",
+                );
+                const endStr = formatInTimeZone(
+                    endOfDay(parsedDate),
+                    timeZone,
+                    "yyyy-MM-dd'T'HH:mm:ssXXX",
+                );
+
+                totalParams.push(new Date(startStr), new Date(endStr));
+            } catch {
+                throw new BadRequestException({
+                    message: 'filterDate must be in dd-MM-yyyy format',
+                });
+            }
         }
 
         const totalResult: TotalCountResult[] = await this.prisma.$queryRawUnsafe(
