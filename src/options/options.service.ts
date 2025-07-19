@@ -6,7 +6,6 @@ export class OptionsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(id: string) {
-    // Find all options where name contains the given id string
     const options = await this.prisma.options.findMany({
       where: {
         name: {
@@ -22,7 +21,6 @@ export class OptionsService {
       return { data: [], total: 0 };
     }
 
-    // Extract option ids
     const optionIds = options.map(opt => opt.id);
 
     // Find all option_values where option_id is in optionIds

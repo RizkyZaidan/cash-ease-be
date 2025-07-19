@@ -8,7 +8,7 @@ datasource db {
 }
 
 model account {
-  id            String         @id(map: "account_pk") @db.VarChar
+  id            String         @id(map: "account_pk") @default(dbgenerated("md5((random())::text)")) @db.VarChar
   user_id       String?        @db.VarChar
   account_type  String?        @db.VarChar
   account_no    String?        @db.VarChar
@@ -16,13 +16,15 @@ model account {
   users         users?         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "account_user_fk")
 }
 
-model balance {
-  id           String    @id(map: "balance_pk") @db.VarChar
-  user         String?   @db.VarChar
-  balance      BigInt?
+model balances {
+  id           String    @id(map: "balance_pk") @default(dbgenerated("md5((random())::text)")) @db.VarChar
+  user_id      String?   @db.VarChar
+  balance      Decimal?  @db.Decimal(10, 3)
   account_no   String?   @db.VarChar
   account_type String?   @db.VarChar
   created_at   DateTime? @db.Date
+  timestamp    DateTime? @default(now()) @db.Timestamp(6)
+  users        users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "balance_users_fk")
 }
 
 model option_values {
@@ -56,14 +58,15 @@ model roles {
 }
 
 model transaction {
-  id               String    @id(map: "transaction_pk") @db.VarChar
+  id               String    @id(map: "transaction_pk") @default(dbgenerated("md5((random())::text)")) @db.VarChar
   reference_no     String?   @db.VarChar
   user_id          String?   @db.VarChar
   transaction_type String?   @db.VarChar
-  amount           BigInt?
-  balance_before   BigInt?
-  balance_after    BigInt?
+  amount           Decimal?  @db.Decimal(10, 3)
+  balance_before   Decimal?  @db.Decimal(10, 3)
+  balance_after    Decimal?  @db.Decimal(10, 3)
   created_date     DateTime? @db.Timestamp(6)
+  users            users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transaction_users_fk")
 }
 
 model user_roles {
@@ -75,13 +78,15 @@ model user_roles {
 }
 
 model users {
-  id           String       @id(map: "user_pk") @default(dbgenerated("md5((random())::text)")) @db.VarChar
-  full_name    String?      @db.VarChar
-  username     String?      @unique(map: "users_unique") @db.VarChar
-  password     String?      @db.VarChar
-  created_date DateTime?    @default(now()) @db.Date
-  update_date  DateTime?    @db.Date
-  balance      BigInt?      @default(0)
+  id           String        @id(map: "user_pk") @default(dbgenerated("md5((random())::text)")) @db.VarChar
+  full_name    String?       @db.VarChar
+  username     String?       @unique(map: "users_unique") @db.VarChar
+  password     String?       @db.VarChar
+  created_date DateTime?     @default(now()) @db.Date
+  update_date  DateTime?     @db.Date
+  balance      Decimal?      @default(0) @db.Decimal(10, 3)
   account      account[]
+  balances     balances[]
+  transaction  transaction[]
   user_roles   user_roles[]
 }

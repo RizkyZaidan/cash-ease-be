@@ -7,6 +7,7 @@ import { CifModule } from './cif/cif.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportModule } from './report/report.module';
 import { OptionsModule } from './options/options.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OptionsModule } from './options/options.module';
     DashboardModule,
     ReportModule,
     OptionsModule,
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

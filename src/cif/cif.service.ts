@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-users.dto';
 import { UpdateUserDto } from './dto/update-users.dto';
 import * as bcrypt from 'bcrypt';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class CifService {
@@ -15,7 +16,7 @@ export class CifService {
                 full_name: createUserDto.full_name,
                 username: createUserDto.username,
                 password: hashedPassword,
-                balance: createUserDto.balance ?? BigInt(0),
+                balance: createUserDto.balance ?? Decimal(0),
             },
         });
     }
@@ -45,7 +46,7 @@ export class CifService {
                             account_no: true,
                             account_type: true,
                         },
-                        take: 1, // assuming you want only one account per user
+                        take: 1, 
                     },
                 },
             }),
