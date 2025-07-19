@@ -1,5 +1,5 @@
 
-```
+```markdown
 <p align="center">
   <a href="https://github.com/RizkyZaidan/cash-ease-be" target="_blank">
     <img src="https://raw.githubusercontent.com/RizkyZaidan/cash-ease-be/main/logo.png" alt="Cash Ease Logo" width="120" />
