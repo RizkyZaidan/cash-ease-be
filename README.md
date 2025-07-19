@@ -9,7 +9,7 @@ A backend API for Cash Ease application.
 ## Prerequisites
 
 - **Node.js** v23.7  
-- **Browser** (for API testing with Postman or similar)  
+- **Postman/Apidog/Insomnia/etc.** (for API testing with Postman or similar)  
 - **Database Manager** (e.g., [DBeaver](https://dbeaver.io/) or [Navicat](https://www.navicat.com/))  
 
 ---
