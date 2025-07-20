@@ -67,6 +67,13 @@ To run the end-to-end tests, use the following command:
 npm run test:e2e
 ```
 
+For Log In into Admin dashboard use this following:
+
+```bash
+Username : admin
+Password : admin123
+```
+
 ---
 
 Happy Coding! 🚀
