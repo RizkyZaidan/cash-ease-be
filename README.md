@@ -45,13 +45,20 @@ cd cash-ease-be
 
 1. Rename `.env.example` file at the root of the project to `.env`.
 
-2. Install dependencies:
+2. change the `.env` variable based on your postgres setup.
+
+```bash
+DB_USERNAME=postgres // Change into your PostgreSql database username
+DB_PASSWORD=258046 // Change into your PostgreSql database password
+```
+
+3. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Start the development server:
+4. Start the development server:
 
 ```bash
 npm run start:dev
